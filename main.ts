@@ -65,7 +65,6 @@ let successMessage:string;
 let dbType: string = "sql";
 
 async function main(){
-    // console.log(await approveRequestInMango(1));
 
     interface Holiday {
         date: string;
@@ -298,7 +297,6 @@ async function main(){
     app.get('/update-request', (req, res) => {
         try {
             const idOfRequest: number = Number(req.query.requestId);
-            console.log('Request ID' + idOfRequest);
             res.render('update-request', { idOfRequest: idOfRequest});
         } catch (error) {
             res.status(500).send(error);
