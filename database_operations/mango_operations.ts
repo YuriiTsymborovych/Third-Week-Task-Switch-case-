@@ -185,6 +185,7 @@ async function approveRequestInMango(id:number, leftHolidays: number, employeeId
     console.log("Approved Request created successfully:", result);
     return result;
 }
+
 async function rejectRequestInMango(id:number, employeeId: number, startDate: string, endDate: string){
     const innerId = await autoIncrementation("appRejRequests");
 
@@ -201,6 +202,7 @@ async function rejectRequestInMango(id:number, employeeId: number, startDate: st
     console.log("Rejected Request created successfully:", result);
     return result;
 }
+
 async function getDatesOfOneRequestInMongo(requestId: number) {
     try {
         const request = await requests.findOne({ id: requestId }, { startDate: 1, endDate: 1, _id: 0 });
@@ -215,6 +217,7 @@ async function getDatesOfOneRequestInMongo(requestId: number) {
         throw error;
     }
 }
+
 async function getEmployeeRemainingHolidaysFromMango(idOfEmployee: number){
     try {
         const employee = await employees.findOne({ id: idOfEmployee }, { remainingHolidays: 1, _id: 0 });

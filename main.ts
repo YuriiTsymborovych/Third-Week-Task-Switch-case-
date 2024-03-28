@@ -1,4 +1,4 @@
-//import { Employee } from './employees.js';
+import { Employee } from './employees.js';
 import { HolidayRequests, statusPending, statusApproved, statusRejected } from './holidayRequests.js';
 import { HolidayRules } from './holidayRules.js';
 
@@ -31,23 +31,43 @@ import {
     getEmployeeRemainingHolidaysFromMango
 } from "./database_operations/mango_operations.js";
 
-
 import mysql from 'mysql2/promise';
 import {RowDataPacket} from 'mysql2/promise';
-
 import mongoose from 'mongoose';
 
+import cors from 'cors';
+import passport from 'passport';
+import User from './database_operations/userSchema.js';
+import {router, verifyToken} from './routes/users.js';
+import invokePassport from './KeyPair/passport.js';
+invokePassport(passport);
 
-config()
+import {genKeyPair} from './KeyPair/generateKeypair.js'
+genKeyPair();
+
+import cookies from 'cookie-parser';
+
+config();
 const dbUrl:string = process.env.MONG_DB_URL as string;
 mongoose.connect(dbUrl);
 
+const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const port:number = Number(process.env.PORT as string);
 
+// це частина паспорта також
+app.use(passport.initialize());
+app.use(cookies());
+
 app.use(bodyParser.urlencoded());
 app.use(express.urlencoded({ extended: true }));
+
+//це частина паспорта також
+app.use(cors());
+app.use(router);
+
+//Middleware for logging data about requests
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     console.log('Request Body:', req.body);
@@ -94,7 +114,7 @@ async function main(){
         });
 
     //endpoints
-    app.post('/delete-request', (req, res) => {
+    app.post('/delete-request', verifyToken, (req, res) => {
         try {
 
         } catch (error) {
@@ -103,7 +123,7 @@ async function main(){
         }
     });
 
-    app.delete('/delete-request', (req, res) => {
+    app.delete('/delete-request', verifyToken, (req, res) => {
         try {
             const requestId:number = Number(req.query.requestId);
             const result = req.query.result;
@@ -122,7 +142,7 @@ async function main(){
         }
     });
     
-    app.get('/employees', async (req, res) => {
+    app.get('/employees', verifyToken, async (req, res) => {
         try {
             if(dbType === "Mongo"){
                 const employeesJson = await getEmployeeRowsFromMango();
@@ -137,7 +157,7 @@ async function main(){
     });
 
     //in the 3rd task this endpoint was called /holidays, but in the 4rth it was renamed to /requests, but we decided to dont rename it
-    app.get('/holidays', async (req, res) => {
+    app.get('/holidays', verifyToken, async (req, res) => {
         try {
             if(dbType === "Mongo"){
                 const requestsJson: HolidayRequests[] = await getRequestsRowsFromMango();
@@ -190,7 +210,7 @@ async function main(){
         }
     })
 
-    app.post('/approve-reject-holiday', async (req, res) => {
+    app.post('/approve-reject-holiday', verifyToken, async (req, res) => {
         try {
             const idOfEmployee = parseInt(req.body.idOfEmployee);
             const action = req.body.action;
@@ -252,7 +272,8 @@ async function main(){
         }
     });
 
-    app.get('/add-holiday', async (req, res) => {
+    app.get('/add-holiday', verifyToken, async (req, res) => {
+        
         try {
             if(dbType === "Mongo"){
                 const employeesJson = await getEmployeeRowsFromMango();
@@ -266,7 +287,7 @@ async function main(){
         }
     });
 
-    app.post("/add-holiday", async (req, res) => {
+    app.post("/add-holiday", verifyToken, async (req, res) => {
         const employeeId = parseInt(req.body.employeeId as string);
         const startDate = req.body.startDate as string;
         const endDate = req.body.endDate as string;
@@ -289,12 +310,12 @@ async function main(){
         }
     });
 
-    app.post('/submit-data', (req, res) => {
+    app.post('/submit-data', verifyToken, (req, res) => {
         dbType = req.body.dbType as string;
         res.redirect('/add-holiday');
     });
 
-    app.get('/update-request', (req, res) => {
+    app.get('/update-request', verifyToken, (req, res) => {
         try {
             const idOfRequest: number = Number(req.query.requestId);
             res.render('update-request', { idOfRequest: idOfRequest});
@@ -303,7 +324,7 @@ async function main(){
         }
     });
 
-    app.post('/update-request', (req, res) => {
+    app.post('/update-request', verifyToken, (req, res) => {
         const startDate:string = req.body.startDate;
         const endDate:string = req.body.endDate;
         const id = Number(req.body.idOfRequest as string);

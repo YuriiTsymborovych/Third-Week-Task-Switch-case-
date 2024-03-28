@@ -19,14 +19,30 @@ import {
 //failMessage,
 deleteRequestByIdFromMango, checkDatesFromMango, getEmployeeRowsFromMango, getOneRequestInMango, addOneRequestToMango, getRequestsRowsFromMango, getApprovedOrRejectedRequestsFromMango, updateRequestInMongo, approveRequestInMango, rejectRequestInMango, getDatesOfOneRequestInMongo, getEmployeeRemainingHolidaysFromMango } from "./database_operations/mango_operations.js";
 import mongoose from 'mongoose';
+import cors from 'cors';
+import passport from 'passport';
+import { router, verifyToken } from './routes/users.js';
+import invokePassport from './KeyPair/passport.js';
+invokePassport(passport);
+import { genKeyPair } from './KeyPair/generateKeypair.js';
+genKeyPair();
+import cookies from 'cookie-parser';
 config();
 const dbUrl = process.env.MONG_DB_URL;
 mongoose.connect(dbUrl);
+const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const port = Number(process.env.PORT);
+// це частина паспорта також
+app.use(passport.initialize());
+app.use(cookies());
 app.use(bodyParser.urlencoded());
 app.use(express.urlencoded({ extended: true }));
+//це частина паспорта також
+app.use(cors());
+app.use(router);
+//Middleware for logging data about requests
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     console.log('Request Body:', req.body);
@@ -41,7 +57,6 @@ let successMessage;
 let dbType = "sql";
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
-        // console.log(await approveRequestInMango(1));
         function fetchHolidays(year, countryCode) {
             return __awaiter(this, void 0, void 0, function* () {
                 try {
@@ -64,7 +79,7 @@ function main() {
             console.error('An error occurred while receiving holidays:', error);
         });
         //endpoints
-        app.post('/delete-request', (req, res) => {
+        app.post('/delete-request', verifyToken, (req, res) => {
             try {
             }
             catch (error) {
@@ -72,7 +87,7 @@ function main() {
                 res.status(500).send('Internal Server Error');
             }
         });
-        app.delete('/delete-request', (req, res) => {
+        app.delete('/delete-request', verifyToken, (req, res) => {
             try {
                 const requestId = Number(req.query.requestId);
                 const result = req.query.result;
@@ -92,7 +107,7 @@ function main() {
                 res.status(500).send('Internal Server Error');
             }
         });
-        app.get('/employees', (req, res) => __awaiter(this, void 0, void 0, function* () {
+        app.get('/employees', verifyToken, (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 if (dbType === "Mongo") {
                     const employeesJson = yield getEmployeeRowsFromMango();
@@ -108,7 +123,7 @@ function main() {
             }
         }));
         //in the 3rd task this endpoint was called /holidays, but in the 4rth it was renamed to /requests, but we decided to dont rename it
-        app.get('/holidays', (req, res) => __awaiter(this, void 0, void 0, function* () {
+        app.get('/holidays', verifyToken, (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 if (dbType === "Mongo") {
                     const requestsJson = yield getRequestsRowsFromMango();
@@ -154,7 +169,7 @@ function main() {
                 res.status(500).send('Internal Server Error');
             }
         }));
-        app.post('/approve-reject-holiday', (req, res) => __awaiter(this, void 0, void 0, function* () {
+        app.post('/approve-reject-holiday', verifyToken, (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const idOfEmployee = parseInt(req.body.idOfEmployee);
                 const action = req.body.action;
@@ -215,7 +230,7 @@ function main() {
                 res.status(500).send('Internal Server Error');
             }
         }));
-        app.get('/add-holiday', (req, res) => __awaiter(this, void 0, void 0, function* () {
+        app.get('/add-holiday', verifyToken, (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 if (dbType === "Mongo") {
                     const employeesJson = yield getEmployeeRowsFromMango();
@@ -230,7 +245,7 @@ function main() {
                 res.status(500).send(error);
             }
         }));
-        app.post("/add-holiday", (req, res) => __awaiter(this, void 0, void 0, function* () {
+        app.post("/add-holiday", verifyToken, (req, res) => __awaiter(this, void 0, void 0, function* () {
             const employeeId = parseInt(req.body.employeeId);
             const startDate = req.body.startDate;
             const endDate = req.body.endDate;
@@ -255,21 +270,20 @@ function main() {
                 }
             }
         }));
-        app.post('/submit-data', (req, res) => {
+        app.post('/submit-data', verifyToken, (req, res) => {
             dbType = req.body.dbType;
             res.redirect('/add-holiday');
         });
-        app.get('/update-request', (req, res) => {
+        app.get('/update-request', verifyToken, (req, res) => {
             try {
                 const idOfRequest = Number(req.query.requestId);
-                console.log('Request ID' + idOfRequest);
                 res.render('update-request', { idOfRequest: idOfRequest });
             }
             catch (error) {
                 res.status(500).send(error);
             }
         });
-        app.post('/update-request', (req, res) => {
+        app.post('/update-request', verifyToken, (req, res) => {
             const startDate = req.body.startDate;
             const endDate = req.body.endDate;
             const id = Number(req.body.idOfRequest);
