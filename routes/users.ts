@@ -1,9 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import mongoose, {Schema} from 'mongoose';
+import mongoose, {disconnect, Schema} from 'mongoose';
 import passport from 'passport';
 import jsonwebtoken, {JwtPayload} from 'jsonwebtoken';
 import User from '../database_operations/userSchema.js';
 import * as utils from '../lib/utils.js';
+import {issueRefresh} from "../lib/utils.js";
 
 const router = Router();
 
@@ -34,6 +35,8 @@ router.get('/login', (req, res) => {
     res.render('login');
 });
 
+
+
 router.post('/login', async (req, res, next) => {
     try {
         const user = await User.findOne({username: req.body.username});
@@ -58,6 +61,26 @@ router.post('/login', async (req, res, next) => {
     } catch (err) {
         return next(err);
     }
+});
+
+router.post('/refresh-jwt', async (req, res, next) => {
+try{
+    const token = req.cookies?.jwtToken?.token;
+    const refreshToken = req.cookies?.refreshToken?.token;
+    const [ , accessToken] = token.split(' ');
+
+    const decodedToken: JwtPayload | null= jsonwebtoken.decode(accessToken, {complete: true});
+
+    const sub = decodedToken?.payload.sub;
+    const neededUser  = await User.findOne({_id: sub});
+    console.log(neededUser)
+    if(refreshToken){
+        const tokenObject = utils.issueJWT(neededUser);
+        res.cookie('jwtToken', tokenObject, { maxAge: 60 * 1000, httpOnly: true, secure: true });
+        res.redirect('/add-holiday');
+    }
+}catch (err){return next(err)}
+
 });
 
 router.get('/register', (req, res) => {
