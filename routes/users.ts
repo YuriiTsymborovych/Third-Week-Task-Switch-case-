@@ -1,22 +1,39 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
+import mongoose, {disconnect, Schema} from 'mongoose';
 import passport from 'passport';
+import jsonwebtoken, {JwtPayload} from 'jsonwebtoken';
 import User from '../database_operations/userSchema.js';
 import * as utils from '../lib/utils.js';
+import {issueRefresh} from "../lib/utils.js";
 
 const router = Router();
 
-const verifyToken = (req: Request, res: Response, next: NextFunction) => {
+async function verifyToken (req: Request, res: Response, next: NextFunction) {
     const token = req.cookies?.jwtToken?.token;
-    if (!token) {
+
+    if(token){
+        const [ , accessToken] = token.split(' ');
+        const decodedToken: JwtPayload | null= jsonwebtoken.decode(accessToken, {complete: true});
+        const sub = decodedToken?.payload.sub;
+
+        const neededUser = await User.findOne({_id: sub});
+        if(neededUser){
+            next();
+        }else{
+            console.log('No such user')
+        }
+    }else if(req.user){
+        next();
+    }else{
         return res.status(401).json({ success: false, message: 'Unauthorized: No token provided' });
     }
-    next();
 };
 
 router.get('/login', (req, res) => {
     res.render('login');
 });
+
+
 
 router.post('/login', async (req, res, next) => {
     try {
@@ -30,7 +47,9 @@ router.post('/login', async (req, res, next) => {
 
         if(isValid){
             const tokenObject = utils.issueJWT(user);
-            res.cookie('jwtToken', tokenObject, { httpOnly: true, secure: true });
+            const refreshObject = utils.issueRefresh(user);
+            res.cookie('jwtToken', tokenObject, { maxAge: 60 * 1000, httpOnly: true, secure: true });
+            res.cookie('refreshToken', refreshObject, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true, secure: true });
             res.status(200).redirect("/add-holiday");
         } else {
             console.log("Password entered incorrectly!");
@@ -38,7 +57,28 @@ router.post('/login', async (req, res, next) => {
         }
     } catch (err) {
         return next(err);
+
     }
+});
+
+router.post('/refresh-jwt', async (req, res, next) => {
+try{
+    const token = req.cookies?.jwtToken?.token;
+    const refreshToken = req.cookies?.refreshToken?.token;
+    const [ , accessToken] = token.split(' ');
+
+    const decodedToken: JwtPayload | null= jsonwebtoken.decode(accessToken, {complete: true});
+
+    const sub = decodedToken?.payload.sub;
+    const neededUser  = await User.findOne({_id: sub});
+    console.log(neededUser)
+    if(refreshToken){
+        const tokenObject = utils.issueJWT(neededUser);
+        res.cookie('jwtToken', tokenObject, { maxAge: 60 * 1000, httpOnly: true, secure: true });
+        res.redirect('/add-holiday');
+    }
+}catch (err){return next(err)}
+
 });
 
 router.get('/register', (req, res) => {
@@ -60,6 +100,7 @@ router.post('/register', (req, res, next) => {
     newUser.save()
     .then((user) => {
         const jwt = utils.issueJWT(user);
+        //const refresh = utils.issueRefresh(user);
         res.status(200).redirect("/login");
     })
     .catch(err => next(err));
@@ -70,7 +111,6 @@ router.post('/logout', (req, res, next) => {
     res.redirect('/login');
 });
 
-//export default router;
 export {
     router,
     verifyToken,

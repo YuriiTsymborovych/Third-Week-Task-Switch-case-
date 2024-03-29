@@ -49,19 +49,12 @@
     </form>
     <br />
 
-    <form action="/submit-data" method="POST">
-        <input type="hidden" name="dbType" value="sql">
-        <button style="background-color: chartreuse;" type="submit">Choose SQL Database</button>
-    </form>
-    <br />
-    <form action="/submit-data" method="POST">
-        <input type="hidden" name="dbType" value="Mongo">
-        <button style="background-color: chartreuse;" type="submit">Choose MongoDB</button>
-    </form>
-    <br />
-
     <form action="/logout" method="POST">
       <button style="background-color: red;" type="submit">Logout</button>
+    </form>
+    <br/>
+    <form action="/refresh-jwt" method="POST">
+      <button style="background-color: red;" type="submit">Refresh Token</button>
     </form>
 
     <br />
@@ -71,6 +64,8 @@
       <li><%= holiday.localName %> - <%= holiday.date %></li>
       <% }); %>
     </ul>
+    <a href="#" onclick="refreshToken()">ref</a>
+
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
     <script>
