@@ -10,8 +10,6 @@ const router = Router();
 
 async function verifyToken (req: Request, res: Response, next: NextFunction) {
     const token = req.cookies?.jwtToken?.token;
-    //const expiresIn = req.cookies?.jwtToken?.expires;
-    //console.log(expiresIn);
 
     if(token){
         const [ , accessToken] = token.split(' ');
@@ -49,10 +47,9 @@ router.post('/login', async (req, res, next) => {
 
         if(isValid){
             const tokenObject = utils.issueJWT(user);
-            //const refresh = utils.issueRefresh(user);
-            //res.cookie('refreshToken', refresh, { httpOnly: true, secure: true });
-            res.cookie('jwtToken', tokenObject, { maxAge: 30 * 1000, httpOnly: true, secure: true });
-
+            const refreshObject = utils.issueRefresh(user);
+            res.cookie('jwtToken', tokenObject, { maxAge: 60 * 1000, httpOnly: true, secure: true });
+            res.cookie('refreshToken', refreshObject, { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true, secure: true });
             res.status(200).redirect("/add-holiday");
         } else {
             console.log("Password entered incorrectly!");
@@ -113,31 +110,6 @@ router.post('/logout', (req, res, next) => {
     res.redirect('/login');
 });
 
-// router.post('/refresh', verifyToken, async (req, res, next) => {
-//     try {
-//         const user = await User.findOne({username: req.body.username});
-//
-//         if(!user) {
-//             return res.status(401).json({success: false, msg: "Could not find user"});
-//         }
-//
-//         const isValid = utils.validPassword(req.body.password, user.hash, user.salt);
-//
-//         if(isValid){
-//             const tokenObject = utils.issueJWT(user);
-//             const refresh = utils.issueRefresh(user);
-//             res.cookie('refreshToken', refresh, { httpOnly: true, secure: true });
-//             res.cookie('jwtToken', tokenObject, { httpOnly: true, secure: true });
-//             res.status(200).redirect("/add-holiday");
-//         } else {
-//             console.log("Password entered incorrectly!");
-//             return res.status(401).json({success: false, msg: "You entered the wrong password"});
-//         }
-//     } catch (err) {
-//         return next(err);
-//     }
-// });
-//export default router;
 export {
     router,
     verifyToken,
