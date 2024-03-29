@@ -100,7 +100,6 @@ router.post('/register', (req, res, next) => {
     newUser.save()
     .then((user) => {
         const jwt = utils.issueJWT(user);
-        //const refresh = utils.issueRefresh(user);
         res.status(200).redirect("/login");
     })
     .catch(err => next(err));

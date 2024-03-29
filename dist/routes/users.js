@@ -16,8 +16,6 @@ function verifyToken(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a, _b;
         const token = (_b = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.jwtToken) === null || _b === void 0 ? void 0 : _b.token;
-        //const expiresIn = req.cookies?.jwtToken?.expires;
-        //console.log(expiresIn);
         if (token) {
             const [, accessToken] = token.split(' ');
             const decodedToken = jsonwebtoken.decode(accessToken, { complete: true });
@@ -100,7 +98,6 @@ router.post('/register', (req, res, next) => {
     newUser.save()
         .then((user) => {
         const jwt = utils.issueJWT(user);
-        //const refresh = utils.issueRefresh(user);
         res.status(200).redirect("/login");
     })
         .catch(err => next(err));
@@ -109,29 +106,4 @@ router.post('/logout', (req, res, next) => {
     res.clearCookie('jwtToken');
     res.redirect('/login');
 });
-// router.post('/refresh', verifyToken, async (req, res, next) => {
-//     try {
-//         const user = await User.findOne({username: req.body.username});
-//
-//         if(!user) {
-//             return res.status(401).json({success: false, msg: "Could not find user"});
-//         }
-//
-//         const isValid = utils.validPassword(req.body.password, user.hash, user.salt);
-//
-//         if(isValid){
-//             const tokenObject = utils.issueJWT(user);
-//             const refresh = utils.issueRefresh(user);
-//             res.cookie('refreshToken', refresh, { httpOnly: true, secure: true });
-//             res.cookie('jwtToken', tokenObject, { httpOnly: true, secure: true });
-//             res.status(200).redirect("/add-holiday");
-//         } else {
-//             console.log("Password entered incorrectly!");
-//             return res.status(401).json({success: false, msg: "You entered the wrong password"});
-//         }
-//     } catch (err) {
-//         return next(err);
-//     }
-// });
-//export default router;
 export { router, verifyToken, };
