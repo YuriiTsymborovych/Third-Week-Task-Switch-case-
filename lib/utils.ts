@@ -54,7 +54,7 @@ function genPassword(password: string) {
 function issueJWT(user:any){
     const _id = user._id;
   
-    const expiresIn = '1d';
+    const expiresIn = '15m';
   
     const payload = {
       sub: _id,
@@ -69,4 +69,22 @@ function issueJWT(user:any){
     };
 }
 
-export { validPassword, genPassword, issueJWT };
+function issueRefresh(user:any){
+    const _id = user._id;
+
+    const expiresIn = '1y';
+
+    const payload = {
+        sub: _id,
+        iat: Date.now()
+    };
+
+    const signedRefreshToken = jwt.sign(payload, PRIV_KEY, { expiresIn: expiresIn, algorithm: 'RS256' });
+
+    return {
+        token: "Bearer " + signedRefreshToken,
+        expires: expiresIn
+    };
+}
+
+export { validPassword, genPassword, issueJWT, issueRefresh };

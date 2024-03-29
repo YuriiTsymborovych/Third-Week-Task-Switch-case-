@@ -14,6 +14,8 @@ import axios from 'axios';
 import bodyParser from 'body-parser';
 import { fileURLToPath } from 'url';
 import { config } from 'dotenv';
+import "../auth.cjs?";
+import session from 'express-session';
 import { failMessage, checkDates, getRequestsRows, getApprovedOrRejectedRequestsRows, getEmployeeRows, deleteRequestById, updateRequest, getDatesOfOneRequest, getOneRequest, getEmployeeRemainingHolidays, approveRequest, rejectRequest, addOneRequest } from './database_operations/database_operations.js';
 import { 
 //failMessage,
@@ -37,6 +39,10 @@ const port = Number(process.env.PORT);
 // це частина паспорта також
 app.use(passport.initialize());
 app.use(cookies());
+app.use(session({
+    secret: 'your_secret_key_here',
+}));
+app.use(passport.session());
 app.use(bodyParser.urlencoded());
 app.use(express.urlencoded({ extended: true }));
 //це частина паспорта також
@@ -57,6 +63,14 @@ let successMessage;
 let dbType = "sql";
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
+        function isLoggedIn(req, res, next) {
+            req.user ? next() : res.send("hello");
+        }
+        app.get("/auth/google", passport.authenticate("google", { scope: ["email", "profile"] }));
+        app.get("/auth/google/callback", passport.authenticate("google", {
+            successRedirect: "/holidays",
+            failureRedirect: "/auth/redirect"
+        }));
         function fetchHolidays(year, countryCode) {
             return __awaiter(this, void 0, void 0, function* () {
                 try {

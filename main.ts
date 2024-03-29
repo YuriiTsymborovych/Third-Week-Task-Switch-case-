@@ -3,13 +3,17 @@ import { HolidayRequests, statusPending, statusApproved, statusRejected } from '
 import { HolidayRules } from './holidayRules.js';
 
 import { format,areIntervalsOverlapping , formatDistance, formatRelative, isValid, isWeekend, eachDayOfInterval, differenceInDays, subDays } from 'date-fns';
-import express, {Request, response, Response} from 'express';
+import express, {Request, response, Response,NextFunction} from 'express';
 import path from 'path';
 import ejs from 'ejs';
 import axios, { AxiosResponse } from 'axios';
 import bodyParser  from 'body-parser';
 import { fileURLToPath } from 'url';
-import { config } from 'dotenv'
+import { config } from 'dotenv';
+import "../auth.cjs?"
+import session from 'express-session';
+
+
 
 import {failMessage, checkDates, getOneEmployee, getRequestsRows, getApprovedOrRejectedRequestsRows, getEmployeeRows, getRulesRows, deleteRequestById, updateRequest, getDatesOfOneRequest, getOneRequest, getEmployeeRemainingHolidays, approveRequest, rejectRequest, addOneRequest} from './database_operations/database_operations.js'
 
@@ -59,6 +63,10 @@ const port:number = Number(process.env.PORT as string);
 // це частина паспорта також
 app.use(passport.initialize());
 app.use(cookies());
+app.use(session({
+    secret: 'your_secret_key_here',
+}));
+app.use(passport.session());
 
 app.use(bodyParser.urlencoded());
 app.use(express.urlencoded({ extended: true }));
@@ -85,6 +93,17 @@ let successMessage:string;
 let dbType: string = "sql";
 
 async function main(){
+    function isLoggedIn(req: Request, res: Response, next: NextFunction) {
+        req.user ? next() : res.send("hello");
+    }
+
+
+    app.get("/auth/google",passport.authenticate("google",{scope:["email","profile"]}))
+    app.get("/auth/google/callback",
+        passport.authenticate("google",{
+            successRedirect:"/holidays",
+            failureRedirect:"/auth/redirect"
+        }))
 
     interface Holiday {
         date: string;
