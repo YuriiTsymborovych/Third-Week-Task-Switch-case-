@@ -21,7 +21,7 @@ function genPassword(password) {
 }
 function issueJWT(user) {
     const _id = user._id;
-    const expiresIn = '30s';
+    const expiresIn = '60s';
     const payload = {
         sub: _id,
         iat: Date.now()
@@ -34,7 +34,7 @@ function issueJWT(user) {
 }
 function issueRefresh(user) {
     const _id = user._id;
-    const expiresIn = '1y';
+    const expiresIn = '30d';
     const payload = {
         sub: _id,
         iat: Date.now()
