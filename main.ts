@@ -1,4 +1,4 @@
-import { Employee } from './employees.js';
+//import { Employee } from './employees.js';
 import { HolidayRequests, statusPending, statusApproved, statusRejected } from './holidayRequests.js';
 import { HolidayRules } from './holidayRules.js';
 
@@ -9,6 +9,7 @@ import ejs from 'ejs';
 import axios, { AxiosResponse } from 'axios';
 import bodyParser  from 'body-parser';
 import { fileURLToPath } from 'url';
+<<<<<<< HEAD
 import { config } from 'dotenv';
 import "../auth.cjs?"
 import session from 'express-session';
@@ -16,6 +17,9 @@ import session from 'express-session';
 
 
 //import {failMessage, checkDates, getOneEmployee, getRequestsRows, getApprovedOrRejectedRequestsRows, getEmployeeRows, getRulesRows, deleteRequestById, updateRequest, getDatesOfOneRequest, getOneRequest, getEmployeeRemainingHolidays, approveRequest, rejectRequest, addOneRequest} from './database_operations/database_operations.js'
+=======
+import { config } from 'dotenv'
+>>>>>>> f1b11b5 (mango functions)
 
 import {
     failMessage,
@@ -34,6 +38,12 @@ import {
     getDatesOfOneRequestInMongo,
     getEmployeeRemainingHolidaysFromMango
 } from "./database_operations/mango_operations.js";
+<<<<<<< HEAD
+=======
+
+import mongoose from 'mongoose';
+
+>>>>>>> f1b11b5 (mango functions)
 
 //import mysql from 'mysql2/promise';
 //import {RowDataPacket} from 'mysql2/promise';
@@ -55,7 +65,10 @@ config();
 const dbUrl:string = process.env.MONG_DB_URL as string;
 mongoose.connect(dbUrl);
 
+<<<<<<< HEAD
 const __filename = fileURLToPath(import.meta.url);
+=======
+>>>>>>> f1b11b5 (mango functions)
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const port:number = Number(process.env.PORT as string);
@@ -92,6 +105,7 @@ let successMessage:string;
 //let dbType: string = "sql";
 
 async function main(){
+<<<<<<< HEAD
     function isLoggedIn(req: Request, res: Response, next: NextFunction) {
         req.user ? next() : res.send("hello");
     }
@@ -103,6 +117,9 @@ async function main(){
             successRedirect:"/holidays",
             failureRedirect:"/auth/redirect"
         }))
+=======
+    // console.log(await approveRequestInMango(1));
+>>>>>>> f1b11b5 (mango functions)
 
     interface Holiday {
         date: string;
@@ -170,6 +187,10 @@ async function main(){
         try {
             const requestsJson: HolidayRequests[] = await getRequestsRowsFromMango();
             const approvedOrRejectedRequests: HolidayRequests[] = await getApprovedOrRejectedRequestsFromMango();
+<<<<<<< HEAD
+=======
+
+>>>>>>> f1b11b5 (mango functions)
             relevantHolidays = [];
             const dates = requestsJson.map(request => {
                 return {
@@ -203,6 +224,7 @@ async function main(){
             const requestId = parseInt(req.body.requestId);
             const request = await getOneRequestInMango(requestId);
 
+<<<<<<< HEAD
             const remainingHolidays: number  = await getEmployeeRemainingHolidaysFromMango(idOfEmployee);
 
             const {startDate, endDate} = await getDatesOfOneRequestInMongo(requestId);
@@ -220,6 +242,29 @@ async function main(){
                     res.redirect('/holidays');
                 } else if (action === 'update') {
                     res.redirect(`/update-request?requestId=${requestId}`);
+                const request = await getOneRequestInMango(requestId);
+
+                const remainingHolidays: number  = await getEmployeeRemainingHolidaysFromMango(idOfEmployee);
+                
+                const {startDate, endDate} = await getDatesOfOneRequestInMongo(requestId);
+                const holidayLength = differenceInDays(endDate, startDate);
+                const leftHolidays = remainingHolidays - holidayLength;
+
+                if (request) {
+                    if (action === 'approve') {
+                        await approveRequestInMango(requestId, leftHolidays, idOfEmployee, startDate, endDate);
+                        successMessage = 'Holiday request approved successfully!'
+                        res.redirect('/holidays');
+                    } else if (action === 'reject') {
+                        await rejectRequestInMango(requestId, idOfEmployee, startDate, endDate);
+                        successMessage = 'Holiday request rejected successfully!'
+                        res.redirect('/holidays');
+                    } else if (action === 'update') {
+                        res.redirect(`/update-request?requestId=${requestId}`);
+                    }
+                } else {
+                    res.status(404).send('Request not found');
+>>>>>>> f1b11b5 (mango functions)
                 }
             } else {
                 res.status(404).send('Request not found');
@@ -243,6 +288,10 @@ async function main(){
         const employeeId = parseInt(req.body.employeeId as string);
         const startDate = req.body.startDate as string;
         const endDate = req.body.endDate as string;
+<<<<<<< HEAD
+=======
+
+>>>>>>> f1b11b5 (mango functions)
         if( await checkDatesFromMango(employeeId, startDate, endDate)){
             await addOneRequestToMango(employeeId, startDate, endDate);
             successMessage = "Holiday request created successfully!";
@@ -267,7 +316,10 @@ async function main(){
         const id = Number(req.body.idOfRequest as string);
 
         updateRequestInMongo(id,startDate,endDate);
+<<<<<<< HEAD
         
+=======
+>>>>>>> f1b11b5 (mango functions)
         res.redirect('/holidays');
     });
 
