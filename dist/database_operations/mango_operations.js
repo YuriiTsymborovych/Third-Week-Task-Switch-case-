@@ -71,36 +71,31 @@ function getEmployeeRowsFromMango() {
 function checkDatesFromMango(employeeId, startDate, endDate) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const rules = yield getRulesRowsFromMango();
+            const [rules, employee] = yield Promise.all([
+                getRulesRowsFromMango(),
+                getOneEmployeeFromMango(employeeId)
+            ]);
             const periodOfVacation = differenceInDays(endDate, startDate);
-            const isHolidayOvarlappingWithBlackoutPeriod = !areIntervalsOverlapping({ start: rules[0].blackoutStartDate, end: rules[0].blackoutEndDate }, { start: startDate, end: endDate });
-            const employee = yield getOneEmployeeFromMango(employeeId);
-            if (periodOfVacation > 0 && differenceInDays(startDate, Date()) > 0) {
-                // @ts-ignore
-                if (employee[0].remainingHolidays >= periodOfVacation) {
-                    if (isHolidayOvarlappingWithBlackoutPeriod) {
-                        if (periodOfVacation <= rules[0].maxConsecutiveDays) {
-                            return true;
-                        }
-                        else {
-                            failMessage = "You chose too much days for your holiday!!!";
-                            return false;
-                        }
-                    }
-                    else {
-                        failMessage = "There is a Blackout Period in the dates you chose!!!";
-                        return false;
-                    }
-                }
-                else {
-                    failMessage = "You chose too much days for your holiday!!!";
-                    return false;
-                }
-            }
-            else {
+            const currentDate = new Date();
+            if (periodOfVacation <= 0 || differenceInDays(startDate, currentDate) <= 0) {
                 failMessage = "You chose the wrong period of holiday!!!";
                 return false;
             }
+            // @ts-ignore
+            if (employee[0].remainingHolidays < periodOfVacation) {
+                failMessage = "You chose too much days for your holiday!!!";
+                return false;
+            }
+            const isHolidayOverlappingWithBlackoutPeriod = !areIntervalsOverlapping({ start: rules[0].blackoutStartDate, end: rules[0].blackoutEndDate }, { start: startDate, end: endDate });
+            if (!isHolidayOverlappingWithBlackoutPeriod) {
+                failMessage = "There is a Blackout Period in the dates you chose!!!";
+                return false;
+            }
+            if (periodOfVacation > rules[0].maxConsecutiveDays) {
+                failMessage = "You chose too much days for your holiday!!!";
+                return false;
+            }
+            return true;
         }
         catch (error) {
             failMessage = "The date was entered incorrectly!!!";

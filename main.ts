@@ -12,10 +12,7 @@ import { fileURLToPath } from 'url';
 import { config } from 'dotenv';
 import "../auth.cjs?"
 import session from 'express-session';
-
-
-
-//import {failMessage, checkDates, getOneEmployee, getRequestsRows, getApprovedOrRejectedRequestsRows, getEmployeeRows, getRulesRows, deleteRequestById, updateRequest, getDatesOfOneRequest, getOneRequest, getEmployeeRemainingHolidays, approveRequest, rejectRequest, addOneRequest} from './database_operations/database_operations.js'
+import {holidays, Holiday} from './publicHolidays.js';
 
 import {
     failMessage,
@@ -35,8 +32,6 @@ import {
     getEmployeeRemainingHolidaysFromMango
 } from "./database_operations/mango_operations.js";
 
-//import mysql from 'mysql2/promise';
-//import {RowDataPacket} from 'mysql2/promise';
 import mongoose from 'mongoose';
 
 import cors from 'cors';
@@ -60,7 +55,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const port:number = Number(process.env.PORT as string);
 
-// це частина паспорта також
 app.use(passport.initialize());
 app.use(cookies());
 app.use(session({
@@ -89,49 +83,20 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 let successMessage:string;
-//let dbType: string = "sql";
 
 async function main(){
     function isLoggedIn(req: Request, res: Response, next: NextFunction) {
         req.user ? next() : res.send("hello");
     }
 
-
-    app.get("/auth/google",passport.authenticate("google",{scope:["email","profile"]}))
-    app.get("/auth/google/callback",
-        passport.authenticate("google",{
-            successRedirect:"/holidays",
-            failureRedirect:"/auth/redirect"
-        }))
-
-    interface Holiday {
-        date: string;
-        localName: string;
-        name: string;
-        countryCode: string;
-    }
-
-    async function fetchHolidays(year: number, countryCode: string): Promise<Holiday[]> {
-        try {
-            const response: AxiosResponse<Holiday[]> = await axios.get<Holiday[]>(`https://date.nager.at/api/v3/publicholidays/${year}/${countryCode}`);
-            return response.data;
-        } catch (error) {
-            console.error('An error occurred while executing the request:', error);
-            return [];
-        }
-    }
-
-    const holidays: Holiday[] = [];
     let relevantHolidays: Holiday[] = [];
-    fetchHolidays(2024, 'UA')
-        .then((holidaysData: Holiday[]) => {
-            holidays.push(...holidaysData);
-        })
-        .catch((error) => {
-            console.error('An error occurred while receiving holidays:', error);
-        });
 
-    //endpoints
+    //google authenticate endpoints
+    app.get("/auth/google",passport.authenticate("google",{scope:["email","profile"]}));
+
+    app.get("/auth/google/callback",passport.authenticate("google",{successRedirect:"/holidays", failureRedirect:"/auth/redirect"}));
+
+    //app endpoints
     app.post('/delete-request', verifyToken, (req, res) => {
         try {
 
