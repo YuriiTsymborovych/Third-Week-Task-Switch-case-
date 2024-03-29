@@ -10,16 +10,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { areIntervalsOverlapping, differenceInDays } from 'date-fns';
 import express from 'express';
 import path from 'path';
-import axios from 'axios';
 import bodyParser from 'body-parser';
 import { fileURLToPath } from 'url';
 import { config } from 'dotenv';
 import "../auth.cjs?";
 import session from 'express-session';
-//import {failMessage, checkDates, getOneEmployee, getRequestsRows, getApprovedOrRejectedRequestsRows, getEmployeeRows, getRulesRows, deleteRequestById, updateRequest, getDatesOfOneRequest, getOneRequest, getEmployeeRemainingHolidays, approveRequest, rejectRequest, addOneRequest} from './database_operations/database_operations.js'
+import { holidays } from './publicHolidays.js';
 import { failMessage, deleteRequestByIdFromMango, checkDatesFromMango, getEmployeeRowsFromMango, getOneRequestInMango, addOneRequestToMango, getRequestsRowsFromMango, getApprovedOrRejectedRequestsFromMango, updateRequestInMongo, approveRequestInMango, rejectRequestInMango, getDatesOfOneRequestInMongo, getEmployeeRemainingHolidaysFromMango } from "./database_operations/mango_operations.js";
-//import mysql from 'mysql2/promise';
-//import {RowDataPacket} from 'mysql2/promise';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import passport from 'passport';
@@ -36,7 +33,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const port = Number(process.env.PORT);
-// це частина паспорта також
 app.use(passport.initialize());
 app.use(cookies());
 app.use(session({
@@ -59,39 +55,16 @@ app.listen(port, () => {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 let successMessage;
-//let dbType: string = "sql";
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         function isLoggedIn(req, res, next) {
             req.user ? next() : res.send("hello");
         }
-        app.get("/auth/google", passport.authenticate("google", { scope: ["email", "profile"] }));
-        app.get("/auth/google/callback", passport.authenticate("google", {
-            successRedirect: "/holidays",
-            failureRedirect: "/auth/redirect"
-        }));
-        function fetchHolidays(year, countryCode) {
-            return __awaiter(this, void 0, void 0, function* () {
-                try {
-                    const response = yield axios.get(`https://date.nager.at/api/v3/publicholidays/${year}/${countryCode}`);
-                    return response.data;
-                }
-                catch (error) {
-                    console.error('An error occurred while executing the request:', error);
-                    return [];
-                }
-            });
-        }
-        const holidays = [];
         let relevantHolidays = [];
-        fetchHolidays(2024, 'UA')
-            .then((holidaysData) => {
-            holidays.push(...holidaysData);
-        })
-            .catch((error) => {
-            console.error('An error occurred while receiving holidays:', error);
-        });
-        //endpoints
+        //google authenticate endpoints
+        app.get("/auth/google", passport.authenticate("google", { scope: ["email", "profile"] }));
+        app.get("/auth/google/callback", passport.authenticate("google", { successRedirect: "/holidays", failureRedirect: "/auth/redirect" }));
+        //app endpoints
         app.post('/delete-request', verifyToken, (req, res) => {
             try {
             }
